@@ -1,0 +1,174 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Admin {
+  id        String   @id
+  email     String   @unique
+  password  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime
+}
+
+model Customer {
+  id         Int       @id @default(autoincrement())
+  first_name String?
+  last_name  String?
+  email      String    @unique
+  password   String
+  createdAt  DateTime? @default(now()) @db.Timestamp(6)
+  updatedAt  DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model Designer {
+  id         Int       @id @default(autoincrement())
+  first_name String?
+  last_name  String?
+  email      String    @unique
+  password   String
+  createdAt  DateTime? @default(now()) @db.Timestamp(6)
+  updatedAt  DateTime? @default(now()) @db.Timestamp(6)
+}
+
+model Document {
+  id         String   @id
+  file_name  String
+  file_key   String
+  file_size  Int?
+  file_type  String?
+  product_id String
+  created_at DateTime @default(now())
+  updated_at DateTime
+
+  @@index([product_id])
+}
+
+model Inspiration {
+  id                          String   @id
+  ad_id                       Int      @unique
+  image_url                   String
+  video_url                   String?
+  image_height                Int
+  image_width                 Int
+  brand_id                    String
+  brand_name                  String
+  brand_image                 String
+  earliest_view               DateTime
+  latest_launch               DateTime
+  is_active_since_last_scrape Boolean
+  ad_running_days             Int
+  inactive_time               Int
+  reach                       Int?
+  has_user_seen_ad            Boolean
+  is_saved                    Boolean
+  created_at                  DateTime @default(now())
+  updated_at                  DateTime
+}
+
+model Product {
+  id         String   @id
+  name       String
+  created_at DateTime @default(now())
+  updated_at DateTime
+}
+
+model Request {
+  id         String   @id
+  user_id    String
+  ad_id      Int
+  status     String   @default("pending")
+  created_at DateTime @default(now())
+  updated_at DateTime
+}
+
+model Run {
+  id                  String   @id
+  run_id              String   @default("")
+  timestamp           DateTime @default(now())
+  number_of_brands    Int
+  number_of_templates Int
+  status              String   @default("in_progress")
+  duration            String?
+  created_at          DateTime @default(now())
+  updated_at          DateTime
+}
+
+model ads {
+  id                 String   @unique @db.VarChar(255)
+  brand_id           String   @db.VarChar(255)
+  image              String?
+  video              String?
+  title              String?  @db.VarChar(255)
+  description        String?
+  page_like_count    Int?
+  collation_count    Int?
+  cta_text           String?  @db.VarChar(255)
+  cta_type           String?  @db.VarChar(255)
+  spend              String?
+  reach_estimate     String?
+  report_count       String?
+  total_active_time  String?
+  hidden_safety_data Boolean?
+  caption            String?
+  run_id             String
+}
+
+model brands {
+  fb_page_id            String? @db.VarChar(255)
+  brand_name            String? @db.VarChar(255)
+  brand_id              String
+  total_ad_count        Int?
+  total_active_ad_count Int?
+  run_id                String
+  id                    String  @unique
+}
+
+model new_ads {
+  id                 String   @id @db.VarChar(255)
+  brand_id           String?  @db.VarChar(255)
+  image              String?
+  run_id             String?
+  title              String?  @db.VarChar(255)
+  description        String?
+  page_like_count    Int?
+  collation_count    Int?
+  cta_text           String?  @db.VarChar(255)
+  cta_type           String?  @db.VarChar(255)
+  spend              String?
+  reach_estimate     String?
+  report_count       String?
+  total_active_time  String?
+  hidden_safety_data Boolean?
+  caption            String?
+}
+
+model request_brands {
+  id            Int           @id @default(autoincrement())
+  brand_id      String?       @db.VarChar(255)
+  brand_name    String?       @db.VarChar(255)
+  brand_domaine String?       @db.VarChar(255)
+  status        RequestStatus @default(TODO)
+  user_email    String?       @db.VarChar(255)
+}
+
+/// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
+model scraping_status {
+  id                  Int      @id @default(autoincrement())
+  platform            String   @db.VarChar(50)
+  start_time          DateTime @db.Timestamp(6)
+  last_update_time    DateTime @db.Timestamp(6)
+  number_of_suppliers Int?     @default(0)
+  status              String   @db.VarChar(20)
+  error_message       String?
+}
+
+enum RequestStatus {
+  TODO
+  DOING
+  DONE
+}
