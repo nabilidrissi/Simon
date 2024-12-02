@@ -1,31 +1,28 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Search, ArrowUpDown, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { Dialog } from '@headlessui/react';
 import toast from 'react-hot-toast';
+import { fetchBrands } from '@/app/api/brands';
+import Image from 'next/image';
 
-// Mock data for brands
-const MOCK_BRANDS = Array.from({ length: 500 }, (_, i) => ({
-  id: `brand-${i + 1}`,
-  name: `Brand ${i + 1}`,
-  industry: ['Healthcare', 'Sports', 'Beauty', 'Technology', 'Entertainment', 'Sports'][Math.floor(Math.random() * 6)],
-  size: ['Startup', 'Mid-Market', 'Enterprise'][Math.floor(Math.random() * 3)],
-  status: ['Active', 'Paused', 'Archived'][Math.floor(Math.random() * 3)],
-  activeAds: Math.floor(Math.random() * 1000),
-  totalAds: Math.floor(Math.random() * 5000),
-  monthlySpend: Math.floor(Math.random() * 1000000),
-  engagement: Math.floor(Math.random() * 100),
-  lastUpdated: new Date(Date.now() - Math.random() * 90 * 24 * 60 * 60 * 1000)
-}));
+interface Brand {
+  id: string;
+  brand_id: string;
+  brand_name: string | null;
+  fb_page_id: string | null;
+  total_ad_count: number | null;
+  total_active_ad_count: number | null;
+  run_id: string;
+}
 
 export function Brands() {
   const router = useRouter();
+  const [brands, setBrands] = useState<Brand[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [industryFilter, setIndustryFilter] = useState('All Industries');
-  const [sizeFilter, setSizeFilter] = useState('All Sizes');
-  const [statusFilter, setStatusFilter] = useState('All Statuses');
   const [showRequestModal, setShowRequestModal] = useState(false);
   const [requestForm, setRequestForm] = useState({
     brandName: '',
@@ -33,30 +30,25 @@ export function Brands() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const filteredBrands = MOCK_BRANDS.filter(brand => {
-    const matchesSearch = brand.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesIndustry = industryFilter === 'All Industries' || brand.industry === industryFilter;
-    const matchesSize = sizeFilter === 'All Sizes' || brand.size === sizeFilter;
-    const matchesStatus = statusFilter === 'All Statuses' || brand.status === statusFilter;
-    return matchesSearch && matchesIndustry && matchesSize && matchesStatus;
-  });
+  useEffect(() => {
+    const loadBrands = async () => {
+      try {
+        const { brands } = await fetchBrands();
+        setBrands(brands);
+      } catch (error) {
+        toast.error('Failed to load brands');
+        console.error('Error loading brands:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
-  };
+    loadBrands();
+  }, []);
 
-  const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric'
-    }).format(date);
-  };
+  const filteredBrands = brands.filter(brand => 
+    brand.brand_name?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
 
   const handleRequestSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,13 +66,21 @@ export function Brands() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="p-6 flex items-center justify-center min-h-[400px]">
+        <div className="text-gray-400">Loading brands...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Top Brands</h1>
+          <h1 className="text-2xl font-bold text-white">Brands</h1>
           <p className="text-gray-400">
-            Analyze ad performance across 500 leading brands
+            Analyze ad performance across {brands.length} brands
           </p>
         </div>
         <button
@@ -92,7 +92,7 @@ export function Brands() {
       </div>
 
       <div className="space-y-4">
-        {/* Search and Filters */}
+        {/* Search */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
@@ -106,38 +106,6 @@ export function Brands() {
               />
             </div>
           </div>
-          <select
-            value={industryFilter}
-            onChange={(e) => setIndustryFilter(e.target.value)}
-            className="px-4 py-2 bg-white/10 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-white"
-          >
-            <option>All Industries</option>
-            <option>Healthcare</option>
-            <option>Sports</option>
-            <option>Beauty</option>
-            <option>Technology</option>
-            <option>Entertainment</option>
-          </select>
-          <select
-            value={sizeFilter}
-            onChange={(e) => setSizeFilter(e.target.value)}
-            className="px-4 py-2 bg-white/10 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-white"
-          >
-            <option>All Sizes</option>
-            <option>Startup</option>
-            <option>Mid-Market</option>
-            <option>Enterprise</option>
-          </select>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="px-4 py-2 bg-white/10 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 text-white"
-          >
-            <option>All Statuses</option>
-            <option>Active</option>
-            <option>Paused</option>
-            <option>Archived</option>
-          </select>
         </div>
 
         {/* Brands Grid */}
@@ -149,48 +117,40 @@ export function Brands() {
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl flex items-center justify-center shadow-lg">
-                    <span className="text-xl font-bold text-white">
-                      {brand.name.charAt(0)}
-                    </span>
-                  </div>
+                <div className="w-12 h-12 rounded-xl overflow-hidden shadow-lg">
+                                    <img
+                                      src={`https://s3.us-east-1.amazonaws.com/fillcreative.io/logo_images/${brand.brand_id}.png`}
+                                      alt={brand.brand_name || 'Brand logo'}
+                                      className="w-full h-full object-cover"
+                                    />
+                                  </div>
                   <div>
-                    <h3 className="text-lg font-semibold text-white">{brand.name}</h3>
-                    <span className="text-sm text-gray-400">{brand.industry}</span>
+                    <h3 className="text-lg font-semibold text-white">
+                      {brand.brand_name || 'Unnamed Brand'}
+                    </h3>
+                    <span className="text-sm text-gray-400">ID: {brand.brand_id}</span>
                   </div>
                 </div>
-                <span className={`px-3 py-1 text-xs rounded-full ${
-                  brand.status === 'Active'
-                    ? 'bg-green-500/20 text-green-400 border border-green-500/30'
-                    : brand.status === 'Paused'
-                    ? 'bg-yellow-500/20 text-yellow-400 border border-yellow-500/30'
-                    : 'bg-gray-500/20 text-gray-400 border border-gray-500/30'
-                }`}>
-                  {brand.status}
-                </span>
               </div>
 
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="bg-gray-900/50 rounded-lg p-3">
-                  <p className="text-sm text-gray-400">Monthly Spend</p>
+                  <p className="text-sm text-gray-400">Total Ads</p>
                   <p className="text-lg font-semibold text-white">
-                    {formatCurrency(brand.monthlySpend)}
+                    {brand.total_ad_count || 0}
                   </p>
                 </div>
                 <div className="bg-gray-900/50 rounded-lg p-3">
                   <p className="text-sm text-gray-400">Active Ads</p>
                   <p className="text-lg font-semibold text-white">
-                    {brand.activeAds}
+                    {brand.total_active_ad_count || 0}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-gray-700">
-                <span className="text-sm text-gray-400">
-                  Updated {formatDate(brand.lastUpdated)}
-                </span>
+              <div className="flex items-center justify-end pt-4 border-t border-gray-700">
                 <button
-                  onClick={() => router.push(`/brands/${brand.id}/ads`)}
+                  onClick={() => router.push(`/brands/${brand.brand_id}/ads`)}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   View Ads
