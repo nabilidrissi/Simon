@@ -33,7 +33,6 @@ lerna-debug.log*
 # Production
 /dist
 /dist-ssr
-*.local
 
 # Misc
 .DS_Store
